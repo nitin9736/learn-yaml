@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive YAML Learning</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            min-height: 70vh;
+        }
+        
+        .lesson-panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 2px solid #e9ecef;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .lesson-content {
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+        }
+        
+        .lesson-step {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .lesson-step h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .example-box {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .practice-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .yaml-editor {
+            flex: 1;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: none;
+            background: #2d3748;
+            color: #e2e8f0;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+        
+        .output-container {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .controls {
+            padding: 15px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .status {
+            font-weight: bold;
+            margin-left: auto;
+        }
+        
+        .status.valid {
+            color: #28a745;
+        }
+        
+        .status.invalid {
+            color: #dc3545;
+        }
+        
+        .navigation {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .lesson-counter {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Interactive YAML Learning</h1>
+            <p>Learn YAML by doing - type, experiment, and see results instantly!</p>
+        </div>
+        
+        <div class="content">
+            <div class="lesson-panel">
+                <div class="panel-header">
+                    📚 Current Lesson
+                </div>
+                <div class="lesson-content" id="lessonContent">
+                    <!-- Lesson content will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="lesson-panel practice-panel">
+                <div class="panel-header">
+                    💻 Practice Area
+                </div>
+                <div class="editor-container">
+                    <textarea 
+                        id="yamlEditor" 
+                        class="yaml-editor" 
+                        placeholder="Type your YAML here...">name: Your Name
+age: 25
+city: Your City</textarea>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="validateYAML()">✓ Validate</button>
+                    <button class="btn btn-secondary" onclick="clearEditor()">🗑 Clear</button>
+                    <button class="btn btn-secondary" onclick="loadExample()">📝 Load Example</button>
+                    <div class="status" id="status">Ready to practice!</div>
+                </div>
+                <div class="output-container" id="output">
+Your parsed YAML will appear here...
+Try typing some YAML and click "Validate"!
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation">
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="previousLesson()">← Previous</button>
+                <div class="lesson-counter">
+                    Lesson <span id="currentLesson">1</span> of <span id="totalLessons">8</span>
+                </div>
+                <button class="btn btn-primary" onclick="nextLesson()">Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLessonIndex = 0;
+        
+        const lessons = [
+            {
+                title: "Welcome to YAML!",
+                content: `
+                    <div class="lesson-step">
+                        <h3>🚀 What is YAML?</h3>
+                        <p><strong>YAML</strong> stands for "YAML Ain't Markup Language". It's a human-readable data format used for:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Configuration files</li>
+                            <li>Data exchange</li>
+                            <li>Docker & Kubernetes</li>
+                            <li>CI/CD pipelines</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🎯 Key Rules</h3>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li><strong>Indentation matters!</strong> Use spaces, not tabs</li>
+                            <li><strong>Case sensitive:</strong> 'Name' ≠ 'name'</li>
+                            <li><strong>Colon + space:</strong> Always put a space after colons</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Try This</h3>
+                        <p>In the practice area, try modifying the example. Change the name, age, or city and click "Validate" to see the result!</p>
+                    </div>
+                `,
+                example: `name: John Doe
+age: 30
+city: New York`
+            },
+            {
+                title: "Basic Key-Value Pairs",
+                content: `
+                    <div class="lesson-step">
+                        <h3>📝 Simple Values</h3>
+                        <p>YAML stores data as key-value pairs. The basic format is:</p>
+                        <div class="example-box">key: value</div>
+                        <p>Remember: Always put a <strong>space after the colon</strong>!</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🔤 Strings</h3>
+                        <p>Strings can be written with or without quotes:</p>
+                        <div class="example-box">name: John Doe
+title: "Software Engineer"
+description: 'Works with Python'</div>
+                        <p><strong>When to use quotes:</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Special characters: @, #, %, etc.</li>
+                            <li>Numbers as strings: "123"</li>
+                            <li>Reserved words: "true", "null"</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Practice</h3>
+                        <p>Create a profile with your information using different string formats!</p>
+                    </div>
+                `,
+                example: `name: Alice Johnson
+job_title: "Data Scientist"
+company: 'Tech Corp'
+email: alice@example.com
+phone: "555-0123"`
+            },
+            {
+                title: "Numbers and Booleans",
+                content: `
+                    <div class="lesson-step">
+                        <h3>🔢 Numbers</h3>
+                        <p>YAML automatically recognizes different number types:</p>
+                        <div class="example-box">age: 25
+salary: 75000.50
+temperature: -10
+scientific: 1.23e-4</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>✅ Booleans</h3>
+                        <p>Multiple ways to express true/false:</p>
+                        <div class="example-box">is_active: true
+is_deleted: false
+enabled: yes
+disabled: no
+available: on
+unavailable: off</div>
+                        <p><strong>All of these work:</strong> true/false, yes/no, on/off</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🚫 Null Values</h3>
+                        <div class="example-box">empty_value: null
+tilde_null: ~
+no_value:</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Try This</h3>
+                        <p>Create a user profile with different data types!</p>
+                    </div>
+                `,
+                example: `user_id: 12345
+username: johndoe
+age: 28
+is_premium: true
+is_banned: false
+last_login: null
+score: 98.5`
+            },
+            {
+                title: "Lists (Arrays)",
+                content: `
+                    <div class="lesson-step">
+                        <h3>📝 Creating Lists</h3>
+                        <p>Lists use dashes (-) with proper indentation:</p>
+                        <div class="example-box">fruits:
+  - apple
+  - banana
+  - orange</div>
+                        <p><strong>Important:</strong> Each list item starts with a dash and a space!</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🔄 Inline Lists</h3>
+                        <p>You can also write lists in one line:</p>
+                        <div class="example-box">colors: [red, green, blue]
+numbers: [1, 2, 3, 4, 5]</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>📚 Mixed Data Types</h3>
+                        <div class="example-box">mixed_list:
+  - "string value"
+  - 42
+  - true
+  - null</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Practice</h3>
+                        <p>Create lists of your favorite things!</p>
+                    </div>
+                `,
+                example: `hobbies:
+  - reading
+  - coding
+  - hiking
+  - gaming
+
+favorite_numbers: [7, 13, 42]
+
+shopping_list:
+  - milk
+  - bread
+  - eggs
+  - coffee`
+            },
+            {
+                title: "Nested Structures",
+                content: `
+                    <div class="lesson-step">
+                        <h3>🏗️ Nested Objects</h3>
+                        <p>Create complex structures with proper indentation:</p>
+                        <div class="example-box">person:
+  name: John Doe
+  age: 30
+  address:
+    street: 123 Main St
+    city: Boston
+    state: MA</div>
+                        <p><strong>Rule:</strong> Each level uses 2 more spaces of indentation!</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>📋 Lists of Objects</h3>
+                        <div class="example-box">employees:
+  - name: Alice
+    role: Developer
+    skills: [Python, JavaScript]
+  - name: Bob
+    role: Designer
+    skills: [Photoshop, Figma]</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🗂️ Objects with Lists</h3>
+                        <div class="example-box">company:
+  name: Tech Corp
+  departments:
+    - Engineering
+    - Marketing
+    - Sales
+  locations:
+    - New York
+    - San Francisco</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Challenge</h3>
+                        <p>Create a family tree with nested information!</p>
+                    </div>
+                `,
+                example: `family:
+  parents:
+    - name: John Smith
+      age: 45
+      job: Engineer
+    - name: Jane Smith
+      age: 42
+      job: Teacher
+  children:
+    - name: Emma
+      age: 16
+      hobbies: [soccer, piano]
+    - name: Luke
+      age: 12
+      hobbies: [gaming, reading]
+  pets:
+    - name: Rex
+      type: dog
+      age: 5`
+            },
+            {
+                title: "Multi-line Strings",
+                content: `
+                    <div class="lesson-step">
+                        <h3>📄 Literal Block (|)</h3>
+                        <p>Preserves line breaks and formatting:</p>
+                        <div class="example-box">description: |
+  This is line one
+  This is line two
+  This is line three</div>
+                        <p>Output: Exactly as written with line breaks preserved</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>📝 Folded Block (>)</h3>
+                        <p>Converts line breaks to spaces:</p>
+                        <div class="example-box">summary: >
+  This is a very long paragraph
+  that will be folded into
+  a single line with spaces.</div>
+                        <p>Output: "This is a very long paragraph that will be folded into a single line with spaces."</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>📋 Common Use Cases</h3>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li><strong>Literal (|):</strong> Code blocks, formatted text, scripts</li>
+                            <li><strong>Folded (>):</strong> Long descriptions, documentation</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Try Both</h3>
+                        <p>Experiment with both styles and see the difference!</p>
+                    </div>
+                `,
+                example: `poem: |
+  Roses are red
+  Violets are blue
+  YAML is awesome
+  And so are you!
+
+bio: >
+  I am a software developer
+  who loves working with
+  modern technologies and
+  solving complex problems.
+
+code_snippet: |
+  def hello_world():
+      print("Hello, YAML!")
+      return True`
+            },
+            {
+                title: "Comments and Organization",
+                content: `
+                    <div class="lesson-step">
+                        <h3>💬 Adding Comments</h3>
+                        <p>Comments start with # and help document your YAML:</p>
+                        <div class="example-box"># This is a comment
+name: John Doe  # Inline comment
+# TODO: Add more user info
+age: 30</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>📄 Document Separators</h3>
+                        <p>Use --- to separate multiple documents:</p>
+                        <div class="example-box">---
+# Document 1
+name: First Document
+---
+# Document 2  
+name: Second Document
+...</div>
+                        <p><strong>Note:</strong> ... is optional end marker</p>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🎯 Best Practices</h3>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Use comments to explain complex sections</li>
+                            <li>Group related configurations together</li>
+                            <li>Use consistent indentation (2 spaces recommended)</li>
+                            <li>Add blank lines for readability</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Practice</h3>
+                        <p>Create a well-documented configuration file!</p>
+                    </div>
+                `,
+                example: `---
+# Application Configuration
+app:
+  name: MyApp
+  version: 1.0.0  # Semantic versioning
+  
+  # Server settings
+  server:
+    port: 8080
+    host: localhost
+    
+# Database configuration
+database:
+  # Production database
+  host: db.example.com
+  port: 5432
+  name: myapp_prod
+  
+  # Connection pool settings
+  pool:
+    min_size: 5
+    max_size: 20
+
+# Feature flags
+features:
+  new_ui: true      # Enable new UI
+  beta_features: false  # Disable beta features`
+            },
+            {
+                title: "Real-World Example",
+                content: `
+                    <div class="lesson-step">
+                        <h3>🚀 Docker Compose Example</h3>
+                        <p>Let's look at a real-world YAML file - a Docker Compose configuration:</p>
+                        <div class="example-box">version: '3.8'
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+    depends_on:
+      - database
+
+  database:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret123
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:</div>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🧩 What We See Here</h3>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li><strong>Nested structures:</strong> services → web → ports</li>
+                            <li><strong>Lists:</strong> ports, volumes, depends_on</li>
+                            <li><strong>Different data types:</strong> strings, numbers</li>
+                            <li><strong>Proper indentation:</strong> 2 spaces per level</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>🎓 Congratulations!</h3>
+                        <p>You've learned the fundamentals of YAML! You can now:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Create key-value pairs</li>
+                            <li>Work with different data types</li>
+                            <li>Build lists and nested structures</li>
+                            <li>Use multi-line strings</li>
+                            <li>Add comments and organize your files</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="lesson-step">
+                        <h3>👉 Keep Practicing</h3>
+                        <p>Try creating your own configuration files for different scenarios!</p>
+                    </div>
+                `,
+                example: `# My Personal Website Config
+site:
+  name: "My Awesome Blog"
+  url: "https://myblog.com"
+  description: >
+    A blog about technology,
+    programming, and life experiences.
+
+author:
+  name: "Your Name"
+  email: "you@example.com"
+  social:
+    - platform: twitter
+      handle: "@yourhandle"
+    - platform: github  
+      handle: "yourusername"
+
+settings:
+  theme: dark
+  comments_enabled: true
+  analytics: true
+  
+# Content categories  
+categories:
+  - Technology
+  - Programming
+  - Life
+  - Travel`
+            }
+        ];
+        
+        function loadLesson(index) {
+            const lesson = lessons[index];
+            document.getElementById('lessonContent').innerHTML = lesson.content;
+            document.getElementById('yamlEditor').value = lesson.example;
+            document.getElementById('currentLesson').textContent = index + 1;
+            document.getElementById('totalLessons').textContent = lessons.length;
+            validateYAML(); // Auto-validate the example
+        }
+        
+        function nextLesson() {
+            if (currentLessonIndex < lessons.length - 1) {
+                currentLessonIndex++;
+                loadLesson(currentLessonIndex);
+            }
+        }
+        
+        function previousLesson() {
+            if (currentLessonIndex > 0) {
+                currentLessonIndex--;
+                loadLesson(currentLessonIndex);
+            }
+        }
+        
+        function validateYAML() {
+            const yamlText = document.getElementById('yamlEditor').value;
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            
+            try {
+                const parsed = jsyaml.load(yamlText);
+                output.textContent = JSON.stringify(parsed, null, 2);
+                status.textContent = '✅ Valid YAML!';
+                status.className = 'status valid';
+            } catch (error) {
+                output.textContent = '❌ Error: ' + error.message;
+                status.textContent = '❌ Invalid YAML';
+                status.className = 'status invalid';
+            }
+        }
+        
+        function clearEditor() {
+            document.getElementById('yamlEditor').value = '';
+            document.getElementById('output').textContent = 'Editor cleared. Type some YAML and click Validate!';
+            document.getElementById('status').textContent = 'Ready to practice!';
+            document.getElementById('status').className = 'status';
+        }
+        
+        function loadExample() {
+            const lesson = lessons[currentLessonIndex];
+            document.getElementById('yamlEditor').value = lesson.example;
+            validateYAML();
+        }
+        
+        // Auto-validate as user types (with debounce)
+        let timeout;
+        document.getElementById('yamlEditor').addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(validateYAML, 500);
+        });
+        
+        // Initialize with first lesson
+        loadLesson(0);
+    </script>
+</body>
+</html>
